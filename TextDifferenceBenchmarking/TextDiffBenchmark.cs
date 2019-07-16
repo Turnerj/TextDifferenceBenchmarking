@@ -22,7 +22,8 @@ namespace TextDifferenceBenchmarking
 		{
 			public Config()
 			{
-				Add(Job.DryCore.WithInvocationCount(200).WithIterationCount(10));
+				//Add(Job.DryCore.WithInvocationCount(200).WithIterationCount(10));
+				Add(Job.Core);
 				Add(MemoryDiagnoser.Default);
 				Add(TargetMethodColumn.Method, StatisticColumn.Max);
 			}

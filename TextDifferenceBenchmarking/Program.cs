@@ -12,7 +12,6 @@ namespace TextDifferenceBenchmarking
 		{
 			ValidateEngines();
 			BenchmarkRunner.Run<TextDiffBenchmark>();
-			Console.ReadLine();
 		}
 
 		private static void ValidateEngines()
