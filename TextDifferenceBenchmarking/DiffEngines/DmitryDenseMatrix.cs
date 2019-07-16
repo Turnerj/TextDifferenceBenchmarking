@@ -7,7 +7,7 @@ using TextDifferenceBenchmarking.Utilities;
 namespace TextDifferenceBenchmarking.DiffEngines
 {
 	/// <summary>
-	/// Dmitry Bychenko's solution but with `int[,]` over `int[][]`
+	/// Dmitry Bychenko's solution but with DenseMatrix (from ImageSharp)
 	/// </summary>
 	public class DmitryDenseMatrix : ITextDiff
 	{
