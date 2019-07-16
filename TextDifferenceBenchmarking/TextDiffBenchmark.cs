@@ -89,5 +89,13 @@ namespace TextDifferenceBenchmarking
 				ComparisonString
 			);
 		}
+		[Benchmark]
+		public void DmitryInlineMatrix()
+		{
+			new DmitryInlineMatrix().EditSequence(
+				ComparisonString,
+				ComparisonString
+			);
+		}
 	}
 }
