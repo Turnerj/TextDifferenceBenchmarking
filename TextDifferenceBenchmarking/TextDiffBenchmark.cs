@@ -145,5 +145,13 @@ namespace TextDifferenceBenchmarking
 				ComparisonString
 			);
 		}
+		[Benchmark]
+		public void DmitryBestParallel()
+		{
+			new DmitryBestParallel().EditSequence(
+				ComparisonString,
+				ComparisonString
+			);
+		}
 	}
 }
