@@ -42,6 +42,9 @@ namespace TextDifferenceBenchmarking.DiffEngines
 				var costHandle = Marshal.AllocHGlobal(Marshal.SizeOf<int>() * columns * rows);
 				var D = new Span<int>(costHandle.ToPointer(), columns * rows);
 
+				M[0] = EditOperationKind.None;
+				D[0] = 0;
+
 				// Edge: all removes
 				for (int i = 1; i <= source.Length; ++i)
 				{
