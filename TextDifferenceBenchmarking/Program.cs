@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using TextDifferenceBenchmarking.DiffEngines;
 
 namespace TextDifferenceBenchmarking
@@ -12,6 +13,7 @@ namespace TextDifferenceBenchmarking
 		{
 			ValidateEngines();
 			BenchmarkRunner.Run<TextDiffBenchmark>();
+			//Console.ReadLine();
 		}
 
 		private static void ValidateEngines()
@@ -62,6 +64,24 @@ namespace TextDifferenceBenchmarking
 			var testD1 = "Hello World!";
 			var testD2 = "";
 			AreEqual(standard.EditSequence(testD1, testD2), tested.EditSequence(testD1, testD2));
+
+			//Extra long string checks (same as used in benchmark)
+			var baseString = "abcdefghij";
+			var counts = new[] { 8, 32, 64, 128, 256, 512 };
+			for (int i = 0, l = counts.Length; i < l; i++)
+			{
+				var builder = new StringBuilder();
+				for (int i2 = 0, l2 = counts[i]; i2 < l2; i2++)
+				{
+					builder.Append(baseString);
+				}
+				
+				var comparisonString = builder.ToString();
+				AreEqual(
+					standard.EditSequence(comparisonString, comparisonString), 
+					tested.EditSequence(comparisonString, comparisonString)
+				);
+			}
 		}
 	}
 }
