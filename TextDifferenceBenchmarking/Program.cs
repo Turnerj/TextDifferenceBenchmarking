@@ -32,11 +32,11 @@ namespace TextDifferenceBenchmarking
 
 		private static void CompareEngine(ITextDiff standard, ITextDiff tested)
 		{
-			static void AreEqual(EditOperation[] expected, EditOperation[] actual)
+			void AreEqual(EditOperation[] expected, EditOperation[] actual)
 			{
 				if (expected.Length != actual.Length)
 				{
-					throw new ArgumentException($"Invalid number of operations! Expected {expected.Length} but received {actual.Length}");
+					throw new ArgumentException($"Invalid number of operations! Expected {expected.Length} but received {actual.Length} from {tested.GetType().Name}");
 				}
 
 				for (int i = 0, l = expected.Length; i < l; i++)
@@ -47,7 +47,6 @@ namespace TextDifferenceBenchmarking
 					if (expectedItem.ValueFrom != actualItem.ValueFrom || expectedItem.ValueTo != actualItem.ValueTo || expectedItem.Operation != actualItem.Operation)
 					{
 						throw new ArgumentException("Invalid operation!");
-						throw new Exception();
 					}
 				}
 			}
@@ -65,9 +64,9 @@ namespace TextDifferenceBenchmarking
 			var testD2 = "";
 			AreEqual(standard.EditSequence(testD1, testD2), tested.EditSequence(testD1, testD2));
 
-			//Extra long string checks (same as used in benchmark)
+			//Extra long string checks
 			var baseString = "abcdefghij";
-			var counts = new[] { 8, 32, 64, 128, 256, 512 };
+			var counts = new[] { 8, 64, 128, 512 };
 			for (int i = 0, l = counts.Length; i < l; i++)
 			{
 				var builder = new StringBuilder();
