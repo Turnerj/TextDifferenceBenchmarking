@@ -36,7 +36,7 @@ namespace TextDifferenceBenchmarking
 			{
 				if (expected.Length != actual.Length)
 				{
-					throw new ArgumentException("Invalid number of operations!");
+					throw new ArgumentException($"Invalid number of operations! Expected {expected.Length} but received {actual.Length}");
 				}
 
 				for (int i = 0, l = expected.Length; i < l; i++)
