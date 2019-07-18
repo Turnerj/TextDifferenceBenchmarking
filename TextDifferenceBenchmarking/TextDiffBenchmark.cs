@@ -13,7 +13,7 @@ namespace TextDifferenceBenchmarking
 	[Config(typeof(Config))]
 	public class TextDiffBenchmark
 	{
-		[Params(1, 8, 16, 32, 64, 128, 256, 512)]
+		[Params(1, 32, 128, 512)]
 		public int N;
 
 		private string ComparisonString;
@@ -109,6 +109,14 @@ namespace TextDifferenceBenchmarking
 		public void DmitryLargeArrayPoolMatrix()
 		{
 			new DmitryLargeArrayPoolMatrix().EditSequence(
+				ComparisonString,
+				ComparisonString
+			);
+		}
+		[Benchmark]
+		public void DmitryInlineSpanMatrix()
+		{
+			new DmitryInlineSpanMatrix().EditSequence(
 				ComparisonString,
 				ComparisonString
 			);
