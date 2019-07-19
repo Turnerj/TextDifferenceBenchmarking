@@ -56,19 +56,18 @@ namespace TextDifferenceBenchmarking.DiffEngines
 				}
 
 				// Edge: all inserts 
+				M.Slice(1, targetLength).Fill(EditOperationKind.Add);
 				for (var i = 1; i <= targetLength; ++i)
 				{
-					M[i] = EditOperationKind.Add;
 					D[i] = insertCost * i;
 				}
 
 				// Having fit N - 1, K - 1 characters let's fit N, K
 				var maxDegreeOfParallelism = Environment.ProcessorCount;
-				var minColumnsPerThread = 10;
-				var columnsPerParallel = Math.Max(minColumnsPerThread, (int)Math.Ceiling((double)columns / maxDegreeOfParallelism));
+				var columnsPerParallel = (int)Math.Ceiling((double)columns / maxDegreeOfParallelism);
 				var columnsLeft = columns;
 				var degreeOfParallelism = 0;
-				for (; columnsLeft >= columnsPerParallel && degreeOfParallelism <= maxDegreeOfParallelism; columnsLeft -= columnsPerParallel, degreeOfParallelism++) ;
+				for (; columnsLeft >= columnsPerParallel && degreeOfParallelism < maxDegreeOfParallelism; columnsLeft -= columnsPerParallel, degreeOfParallelism++) ;
 				if (columnsLeft > 0)
 				{
 					degreeOfParallelism++;
@@ -81,12 +80,6 @@ namespace TextDifferenceBenchmarking.DiffEngines
 					var localD = new Span<int>(costHandle.ToPointer(), totalSize);
 
 					var columnStartIndex = columnsPerParallel * parallelIndex + 1;
-					var localColumnSize = columnsPerParallel;
-
-					if (parallelIndex + 1 == degreeOfParallelism)
-					{
-						localColumnSize = columnsLeft;
-					}
 
 					for (var i = 1; i <= sourceLength; ++i)
 					{
@@ -97,7 +90,7 @@ namespace TextDifferenceBenchmarking.DiffEngines
 						var dPrevRow = localD.Slice((i - 1) * columns);
 						var sourcePrevChar = source[i - 1];
 						var columnTravel = 0;
-						for (var j = columnStartIndex; j <= targetLength && columnTravel < localColumnSize; ++j, columnTravel++)
+						for (var j = columnStartIndex; j <= targetLength && columnTravel < columnsPerParallel; ++j, columnTravel++)
 						{
 							// here we choose the operation with the least cost
 							var insert = dCurrentRow[j - 1] + insertCost;
