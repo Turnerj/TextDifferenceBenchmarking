@@ -9,18 +9,14 @@ namespace TextDifferenceBenchmarking
 	{
 		public EditOperation(char valueFrom, char valueTo, EditOperationKind operation)
 		{
-			_ValueFrom = valueFrom;
-			_ValueTo = valueTo;
+			ValueFrom = valueFrom;
+			ValueTo = valueTo;
 
 			Operation = valueFrom == valueTo ? EditOperationKind.None : operation;
 		}
 
-		[MarshalAs(UnmanagedType.I2)]
-		private readonly char _ValueFrom;
-		[MarshalAs(UnmanagedType.I2)]
-		private readonly char _ValueTo;
-		public char ValueFrom => _ValueFrom;
-		public char ValueTo => _ValueTo;
+		public char ValueFrom { get; }
+		public char ValueTo { get; }
 		public EditOperationKind Operation { get; }
 
 		public override string ToString()

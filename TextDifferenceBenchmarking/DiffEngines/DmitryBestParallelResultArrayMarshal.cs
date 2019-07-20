@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -116,7 +117,7 @@ namespace TextDifferenceBenchmarking.DiffEngines
 				// Backward: knowing scores (D) and actions (M) let's building edit sequence
 
 				var maxSize = source.Length + target.Length;
-				var operationResultsHandle = Marshal.AllocHGlobal(Marshal.SizeOf<EditOperation>() * maxSize);
+				var operationResultsHandle = Marshal.AllocHGlobal(Unsafe.SizeOf<EditOperation>() * maxSize);
 				var operations = new Span<EditOperation>(operationResultsHandle.ToPointer(), maxSize);
 				var operationIndex = maxSize;
 
