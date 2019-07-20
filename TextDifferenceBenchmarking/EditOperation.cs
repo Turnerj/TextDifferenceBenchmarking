@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace TextDifferenceBenchmarking
@@ -8,14 +9,18 @@ namespace TextDifferenceBenchmarking
 	{
 		public EditOperation(char valueFrom, char valueTo, EditOperationKind operation)
 		{
-			ValueFrom = valueFrom;
-			ValueTo = valueTo;
+			_ValueFrom = valueFrom;
+			_ValueTo = valueTo;
 
 			Operation = valueFrom == valueTo ? EditOperationKind.None : operation;
 		}
 
-		public char ValueFrom { get; }
-		public char ValueTo { get; }
+		[MarshalAs(UnmanagedType.I2)]
+		private readonly char _ValueFrom;
+		[MarshalAs(UnmanagedType.I2)]
+		private readonly char _ValueTo;
+		public char ValueFrom => _ValueFrom;
+		public char ValueTo => _ValueTo;
 		public EditOperationKind Operation { get; }
 
 		public override string ToString()
