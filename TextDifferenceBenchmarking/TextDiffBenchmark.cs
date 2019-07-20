@@ -13,7 +13,7 @@ namespace TextDifferenceBenchmarking
 	[Config(typeof(Config))]
 	public class TextDiffBenchmark
 	{
-		[Params(1, 32, 128, 512)]
+		[Params(1, 32, 128, 512, 1024)]
 		public int N;
 
 		private string ComparisonString;
@@ -89,14 +89,14 @@ namespace TextDifferenceBenchmarking
 		//		ComparisonString
 		//	);
 		//}
-		[Benchmark]
-		public void DmitryInlineMatrix()
-		{
-			new DmitryInlineMatrix().EditSequence(
-				ComparisonString,
-				ComparisonString
-			);
-		}
+		//[Benchmark]
+		//public void DmitryInlineMatrix()
+		//{
+		//	new DmitryInlineMatrix().EditSequence(
+		//		ComparisonString,
+		//		ComparisonString
+		//	);
+		//}
 		//[Benchmark]
 		//public void DmitryInlineArrayPoolMatrix()
 		//{
@@ -129,26 +129,58 @@ namespace TextDifferenceBenchmarking
 		//		ComparisonString
 		//	);
 		//}
-		[Benchmark]
-		public void DmitryInlineSpanMatrix2()
-		{
-			new DmitryInlineSpanMatrix2().EditSequence(
-				ComparisonString,
-				ComparisonString
-			);
-		}
-		[Benchmark]
-		public void DmitryBest()
-		{
-			new DmitryBest().EditSequence(
-				ComparisonString,
-				ComparisonString
-			);
-		}
+		//[Benchmark]
+		//public void DmitryInlineSpanMatrix2()
+		//{
+		//	new DmitryInlineSpanMatrix2().EditSequence(
+		//		ComparisonString,
+		//		ComparisonString
+		//	);
+		//}
+		//[Benchmark]
+		//public void DmitryBest()
+		//{
+		//	new DmitryBest().EditSequence(
+		//		ComparisonString,
+		//		ComparisonString
+		//	);
+		//}
 		[Benchmark]
 		public void DmitryBestParallel()
 		{
 			new DmitryBestParallel().EditSequence(
+				ComparisonString,
+				ComparisonString
+			);
+		}
+		//[Benchmark]
+		//public void DmitryResultArray()
+		//{
+		//	new DmitryResultArray().EditSequence(
+		//		ComparisonString,
+		//		ComparisonString
+		//	);
+		//}
+		//[Benchmark]
+		//public void DmitryResultArrayMarshal()
+		//{
+		//	new DmitryResultArrayMarshal().EditSequence(
+		//		ComparisonString,
+		//		ComparisonString
+		//	);
+		//}
+		[Benchmark]
+		public void DmitryBestParallelResultArray()
+		{
+			new DmitryBestParallelResultArray().EditSequence(
+				ComparisonString,
+				ComparisonString
+			);
+		}
+		[Benchmark]
+		public void DmitryBestParallelResultArrayMarshal()
+		{
+			new DmitryBestParallelResultArrayMarshal().EditSequence(
 				ComparisonString,
 				ComparisonString
 			);
