@@ -49,138 +49,18 @@ namespace TextDifferenceBenchmarking
 				ComparisonString
 			);
 		}
-		//[Benchmark]
-		//public void DmitryStack()
-		//{
-		//	new DmitryStack().EditSequence(
-		//		ComparisonString,
-		//		ComparisonString
-		//	);
-		//}
-		//[Benchmark]
-		//public void DmitryMultiDimension()
-		//{
-		//	new DmitryMultiDimension().EditSequence(
-		//		ComparisonString,
-		//		ComparisonString
-		//	);
-		//}
-		//[Benchmark]
-		//public void DmitryInlineLength()
-		//{
-		//	new DmitryInlineLength().EditSequence(
-		//		ComparisonString,
-		//		ComparisonString
-		//	);
-		//}
-		//[Benchmark]
-		//public void DmitryCombined()
-		//{
-		//	new DmitryCombined().EditSequence(
-		//		ComparisonString,
-		//		ComparisonString
-		//	);
-		//}
-		//[Benchmark]
-		//public void DmitryDenseMatrix()
-		//{
-		//	new DmitryDenseMatrix().EditSequence(
-		//		ComparisonString,
-		//		ComparisonString
-		//	);
-		//}
-		//[Benchmark]
-		//public void DmitryInlineMatrix()
-		//{
-		//	new DmitryInlineMatrix().EditSequence(
-		//		ComparisonString,
-		//		ComparisonString
-		//	);
-		//}
-		//[Benchmark]
-		//public void DmitryInlineArrayPoolMatrix()
-		//{
-		//	new DmitryInlineArrayPoolMatrix().EditSequence(
-		//		ComparisonString,
-		//		ComparisonString
-		//	);
-		//}
-		//[Benchmark]
-		//public void DmitryLargeArrayPoolMatrix()
-		//{
-		//	new DmitryLargeArrayPoolMatrix().EditSequence(
-		//		ComparisonString,
-		//		ComparisonString
-		//	);
-		//}
-		//[Benchmark]
-		//public void DmitryInlineSpanMatrix()
-		//{
-		//	new DmitryInlineSpanMatrix().EditSequence(
-		//		ComparisonString,
-		//		ComparisonString
-		//	);
-		//}
-		//[Benchmark]
-		//public void DmitryRowCaching()
-		//{
-		//	new DmitryRowCaching().EditSequence(
-		//		ComparisonString,
-		//		ComparisonString
-		//	);
-		//}
-		//[Benchmark]
-		//public void DmitryInlineSpanMatrix2()
-		//{
-		//	new DmitryInlineSpanMatrix2().EditSequence(
-		//		ComparisonString,
-		//		ComparisonString
-		//	);
-		//}
-		//[Benchmark]
-		//public void DmitryBest()
-		//{
-		//	new DmitryBest().EditSequence(
-		//		ComparisonString,
-		//		ComparisonString
-		//	);
-		//}
+		[Benchmark]
+		public void DmitryBest()
+		{
+			new DmitryBest().EditSequence(
+				ComparisonString,
+				ComparisonString
+			);
+		}
 		[Benchmark]
 		public void DmitryBestParallel()
 		{
 			new DmitryBestParallel().EditSequence(
-				ComparisonString,
-				ComparisonString
-			);
-		}
-		//[Benchmark]
-		//public void DmitryResultArray()
-		//{
-		//	new DmitryResultArray().EditSequence(
-		//		ComparisonString,
-		//		ComparisonString
-		//	);
-		//}
-		//[Benchmark]
-		//public void DmitryResultArrayMarshal()
-		//{
-		//	new DmitryResultArrayMarshal().EditSequence(
-		//		ComparisonString,
-		//		ComparisonString
-		//	);
-		//}
-		[Benchmark]
-		public void DmitryBestParallelResultArray()
-		{
-			new DmitryBestParallelResultArray().EditSequence(
-				ComparisonString,
-				ComparisonString
-			);
-		}
-		[Benchmark]
-		public void DmitryBestParallelResultArrayMarshal()
-		{
-			new DmitryBestParallelResultArrayMarshal().EditSequence(
 				ComparisonString,
 				ComparisonString
 			);

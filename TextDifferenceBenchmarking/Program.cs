@@ -13,7 +13,7 @@ namespace TextDifferenceBenchmarking
 		{
 			ValidateEngines();
 			BenchmarkRunner.Run<TextDiffBenchmark>();
-			//Console.ReadLine();
+			Console.ReadLine();
 		}
 
 		private static void ValidateEngines()
