@@ -12,7 +12,7 @@ namespace TextDifferenceBenchmarking.DiffEngines
 	/// </summary>
 	public class DmitryResultArrayMarshal : ITextDiff
 	{
-		public EditOperation[] EditSequence(
+		public unsafe EditOperation[] EditSequence(
 			string source, string target,
 			int insertCost = 1, int removeCost = 1, int editCost = 1)
 		{
@@ -71,45 +71,40 @@ namespace TextDifferenceBenchmarking.DiffEngines
 					D[i][j] = min;
 				}
 
-			EditOperation[] result;
-			unsafe
+			// Backward: knowing scores (D) and actions (M) let's building edit sequence
+			var maxSize = source.Length + target.Length;
+			var operationsHandle = Marshal.AllocHGlobal(Unsafe.SizeOf<EditOperation>() * maxSize);
+			var operations = new Span<EditOperation>(operationsHandle.ToPointer(), maxSize);
+			var operationIndex = maxSize;
+			for (int x = target.Length, y = source.Length; (x > 0) || (y > 0);)
 			{
-				// Backward: knowing scores (D) and actions (M) let's building edit sequence
-				var maxSize = source.Length + target.Length;
-				var operationsHandle = Marshal.AllocHGlobal(Unsafe.SizeOf<EditOperation>() * maxSize);
-				var operations = new Span<EditOperation>(operationsHandle.ToPointer(), maxSize);
-				var operationIndex = maxSize;
-				for (int x = target.Length, y = source.Length; (x > 0) || (y > 0); )
-				{
-					operationIndex--;
-					EditOperationKind op = M[y][x];
+				operationIndex--;
+				EditOperationKind op = M[y][x];
 
-					if (op == EditOperationKind.Add)
-					{
-						x -= 1;
-						operations[operationIndex] = new EditOperation('\0', target[x], op);
-					}
-					else if (op == EditOperationKind.Remove)
-					{
-						y -= 1;
-						operations[operationIndex] = new EditOperation(source[y], '\0', op);
-					}
-					else if (op == EditOperationKind.Edit)
-					{
-						x -= 1;
-						y -= 1;
-						operations[operationIndex] = new EditOperation(source[y], target[x], op);
-					}
-					else // Start of the matching (EditOperationKind.None)
-					{
-						break;
-					}
+				if (op == EditOperationKind.Add)
+				{
+					x -= 1;
+					operations[operationIndex] = new EditOperation('\0', target[x], op);
 				}
-				
-				result = operations.Slice(operationIndex).ToArray();
-				Marshal.FreeHGlobal(operationsHandle);
+				else if (op == EditOperationKind.Remove)
+				{
+					y -= 1;
+					operations[operationIndex] = new EditOperation(source[y], '\0', op);
+				}
+				else if (op == EditOperationKind.Edit)
+				{
+					x -= 1;
+					y -= 1;
+					operations[operationIndex] = new EditOperation(source[y], target[x], op);
+				}
+				else // Start of the matching (EditOperationKind.None)
+				{
+					break;
+				}
 			}
 
+			var result = operations.Slice(operationIndex).ToArray();
+			Marshal.FreeHGlobal(operationsHandle);
 			return result;
 		}
 	}

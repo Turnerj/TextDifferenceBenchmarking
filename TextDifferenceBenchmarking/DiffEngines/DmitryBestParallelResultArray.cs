@@ -14,7 +14,7 @@ namespace TextDifferenceBenchmarking.DiffEngines
 	/// </summary>
 	public class DmitryBestParallelResultArray : ITextDiff
 	{
-		public EditOperation[] EditSequence(
+		public unsafe EditOperation[] EditSequence(
 			string source, string target,
 			int insertCost = 1, int removeCost = 1, int editCost = 1)
 		{
@@ -32,121 +32,119 @@ namespace TextDifferenceBenchmarking.DiffEngines
 			var rows = sourceLength + 1;
 			var totalSize = columns * rows;
 
-			unsafe
+			// Best operation (among insert, update, delete) to perform 
+			var underlyingType = Enum.GetUnderlyingType(typeof(EditOperationKind));
+			var operationHandle = Marshal.AllocHGlobal(Marshal.SizeOf(underlyingType) * totalSize);
+			var M = new Span<EditOperationKind>(operationHandle.ToPointer(), totalSize);
+
+			// Minimum cost so far
+			var costHandle = Marshal.AllocHGlobal(Marshal.SizeOf<int>() * totalSize);
+			var D = new Span<int>(costHandle.ToPointer(), totalSize);
+
+			M[0] = EditOperationKind.None;
+			D[0] = 0;
+
+			// Edge: all removes
+			for (var i = 1; i <= sourceLength; ++i)
 			{
-				// Best operation (among insert, update, delete) to perform 
-				var underlyingType = Enum.GetUnderlyingType(typeof(EditOperationKind));
-				var operationHandle = Marshal.AllocHGlobal(Marshal.SizeOf(underlyingType) * totalSize);
-				var M = new Span<EditOperationKind>(operationHandle.ToPointer(), totalSize);
+				M[i * columns] = EditOperationKind.Remove;
+				D[i * columns] = removeCost * i;
+			}
 
-				// Minimum cost so far
-				var costHandle = Marshal.AllocHGlobal(Marshal.SizeOf<int>() * totalSize);
-				var D = new Span<int>(costHandle.ToPointer(), totalSize);
+			// Edge: all inserts 
+			M.Slice(1, targetLength).Fill(EditOperationKind.Add);
+			for (var i = 1; i <= targetLength; ++i)
+			{
+				D[i] = insertCost * i;
+			}
 
-				M[0] = EditOperationKind.None;
-				D[0] = 0;
+			// Having fit N - 1, K - 1 characters let's fit N, K
+			var maxDegreeOfParallelism = Environment.ProcessorCount;
+			var columnsPerParallel = (int)Math.Ceiling((double)columns / maxDegreeOfParallelism);
+			var columnsLeft = columns;
+			var degreeOfParallelism = 0;
+			for (; columnsLeft >= columnsPerParallel && degreeOfParallelism < maxDegreeOfParallelism; columnsLeft -= columnsPerParallel, degreeOfParallelism++) ;
+			if (columnsLeft > 0)
+			{
+				degreeOfParallelism++;
+			}
 
-				// Edge: all removes
+			var rowProgress = new int[degreeOfParallelism];
+
+			Parallel.For(0, degreeOfParallelism, parallelIndex => {
+				var localM = new Span<EditOperationKind>(operationHandle.ToPointer(), totalSize);
+				var localD = new Span<int>(costHandle.ToPointer(), totalSize);
+
+				var columnStartIndex = columnsPerParallel * parallelIndex + 1;
+
 				for (var i = 1; i <= sourceLength; ++i)
 				{
-					M[i * columns] = EditOperationKind.Remove;
-					D[i * columns] = removeCost * i;
+					while (parallelIndex != 0 && rowProgress[parallelIndex - 1] <= i) ;
+
+					var mCurrentRow = localM.Slice(i * columns);
+					var dCurrentRow = localD.Slice(i * columns);
+					var dPrevRow = localD.Slice((i - 1) * columns);
+					var sourcePrevChar = source[i - 1];
+					var columnTravel = 0;
+					for (var j = columnStartIndex; j <= targetLength && columnTravel < columnsPerParallel; ++j, columnTravel++)
+					{
+						// here we choose the operation with the least cost
+						var insert = dCurrentRow[j - 1] + insertCost;
+						var delete = dPrevRow[j] + removeCost;
+						var edit = dPrevRow[j - 1] + (sourcePrevChar == target[j - 1] ? 0 : editCost);
+
+						var min = Math.Min(Math.Min(insert, delete), edit);
+
+						if (min == insert)
+							mCurrentRow[j] = EditOperationKind.Add;
+						else if (min == delete)
+							mCurrentRow[j] = EditOperationKind.Remove;
+						else if (min == edit)
+							mCurrentRow[j] = EditOperationKind.Edit;
+
+						dCurrentRow[j] = min;
+					}
+
+					rowProgress[parallelIndex] = i;
 				}
 
-				// Edge: all inserts 
-				M.Slice(1, targetLength).Fill(EditOperationKind.Add);
-				for (var i = 1; i <= targetLength; ++i)
+				rowProgress[parallelIndex]++;
+			});
+
+			Marshal.FreeHGlobal(costHandle);
+
+			// Backward: knowing scores (D) and actions (M) let's building edit sequence
+
+			var operations = new Span<EditOperation>(new EditOperation[sourceLength + targetLength]);
+			var operationIndex = operations.Length - 1;
+
+			for (int x = targetLength, y = sourceLength; (x > 0) || (y > 0); operationIndex--)
+			{
+				var op = M[y * columns + x];
+
+				if (op == EditOperationKind.Add)
 				{
-					D[i] = insertCost * i;
+					x -= 1;
+					operations[operationIndex] = new EditOperation('\0', target[x], op);
 				}
-
-				// Having fit N - 1, K - 1 characters let's fit N, K
-				var maxDegreeOfParallelism = Environment.ProcessorCount;
-				var columnsPerParallel = (int)Math.Ceiling((double)columns / maxDegreeOfParallelism);
-				var columnsLeft = columns;
-				var degreeOfParallelism = 0;
-				for (; columnsLeft >= columnsPerParallel && degreeOfParallelism < maxDegreeOfParallelism; columnsLeft -= columnsPerParallel, degreeOfParallelism++) ;
-				if (columnsLeft > 0)
+				else if (op == EditOperationKind.Remove)
 				{
-					degreeOfParallelism++;
+					y -= 1;
+					operations[operationIndex] = new EditOperation(source[y], '\0', op);
 				}
-
-				var rowProgress = new int[degreeOfParallelism];
-
-				Parallel.For(0, degreeOfParallelism, parallelIndex => {
-					var localM = new Span<EditOperationKind>(operationHandle.ToPointer(), totalSize);
-					var localD = new Span<int>(costHandle.ToPointer(), totalSize);
-
-					var columnStartIndex = columnsPerParallel * parallelIndex + 1;
-
-					for (var i = 1; i <= sourceLength; ++i)
-					{
-						while (parallelIndex != 0 && rowProgress[parallelIndex - 1] <= i) ;
-						
-						var mCurrentRow = localM.Slice(i * columns);
-						var dCurrentRow = localD.Slice(i * columns);
-						var dPrevRow = localD.Slice((i - 1) * columns);
-						var sourcePrevChar = source[i - 1];
-						var columnTravel = 0;
-						for (var j = columnStartIndex; j <= targetLength && columnTravel < columnsPerParallel; ++j, columnTravel++)
-						{
-							// here we choose the operation with the least cost
-							var insert = dCurrentRow[j - 1] + insertCost;
-							var delete = dPrevRow[j] + removeCost;
-							var edit = dPrevRow[j - 1] + (sourcePrevChar == target[j - 1] ? 0 : editCost);
-
-							var min = Math.Min(Math.Min(insert, delete), edit);
-
-							if (min == insert)
-								mCurrentRow[j] = EditOperationKind.Add;
-							else if (min == delete)
-								mCurrentRow[j] = EditOperationKind.Remove;
-							else if (min == edit)
-								mCurrentRow[j] = EditOperationKind.Edit;
-
-							dCurrentRow[j] = min;
-						}
-
-						rowProgress[parallelIndex] = i;
-					}
-
-					rowProgress[parallelIndex]++;
-				});
-
-				// Backward: knowing scores (D) and actions (M) let's building edit sequence
-
-				var operations = new Span<EditOperation>(new EditOperation[sourceLength + targetLength]);
-				var operationIndex = operations.Length - 1;
-
-				for (int x = targetLength, y = sourceLength; (x > 0) || (y > 0); operationIndex--)
+				else if (op == EditOperationKind.Edit)
 				{
-					var op = M[y * columns + x];
-
-					if (op == EditOperationKind.Add)
-					{
-						x -= 1;
-						operations[operationIndex] = new EditOperation('\0', target[x], op);
-					}
-					else if (op == EditOperationKind.Remove)
-					{
-						y -= 1;
-						operations[operationIndex] = new EditOperation(source[y], '\0', op);
-					}
-					else if (op == EditOperationKind.Edit)
-					{
-						x -= 1;
-						y -= 1;
-						operations[operationIndex] = new EditOperation(source[y], target[x], op);
-					}
-					else // Start of the matching (EditOperationKind.None)
-						break;
+					x -= 1;
+					y -= 1;
+					operations[operationIndex] = new EditOperation(source[y], target[x], op);
 				}
-
-				Marshal.FreeHGlobal(operationHandle);
-				Marshal.FreeHGlobal(costHandle);
-
-				return operations.Slice(operationIndex + 1).ToArray();
+				else // Start of the matching (EditOperationKind.None)
+					break;
 			}
+
+			Marshal.FreeHGlobal(operationHandle);
+
+			return operations.Slice(operationIndex + 1).ToArray();
 		}
 	}
 }
