@@ -13,10 +13,12 @@ namespace TextDifferenceBenchmarking
 	[Config(typeof(Config))]
 	public class TextDiffBenchmark
 	{
-		[Params(1, 32, 128, 512, 1024)]
+		[Params(1024)]
 		public int N;
 
-		private string ComparisonString;
+		private string ComparisonStringA;
+
+		private string ComparisonStringB;
 
 		private class Config : ManualConfig
 		{
@@ -32,37 +34,49 @@ namespace TextDifferenceBenchmarking
 		[GlobalSetup]
 		public void Setup()
 		{
-			var baseString = "abcdefghij";
-			var builder = new StringBuilder(baseString.Length * N);
+			var baseStringA = "abcdefghij";
+			var baseStringB = "jihgfedcba";
+			var builderA = new StringBuilder(baseStringA.Length * N);
+			var builderB = new StringBuilder(baseStringA.Length * N);
 			for (int i = 0, l = N; i < l; i++)
 			{
-				builder.Append(baseString);
+				builderA.Append(baseStringA);
+				builderB.Append(baseStringB);
 			}
-			ComparisonString = builder.ToString();
+			ComparisonStringA = builderA.ToString();
+			ComparisonStringB = builderB.ToString();
 		}
 
-		[Benchmark(Baseline = true)]
-		public void DmitryBychenko()
-		{
-			new DmitryBychenko().EditSequence(
-				ComparisonString,
-				ComparisonString
-			);
-		}
-		[Benchmark]
-		public void DmitryBest()
-		{
-			new DmitryBest().EditSequence(
-				ComparisonString,
-				ComparisonString
-			);
-		}
+		//[Benchmark(Baseline = true)]
+		//public void DmitryBychenko()
+		//{
+		//	new DmitryBychenko().EditSequence(
+		//		ComparisonString,
+		//		ComparisonString
+		//	);
+		//}
+		//[Benchmark]
+		//public void DmitryBest()
+		//{
+		//	new DmitryBest().EditSequence(
+		//		ComparisonString,
+		//		ComparisonString
+		//	);
+		//}
 		[Benchmark]
 		public void DmitryBestParallel()
 		{
 			new DmitryBestParallel().EditSequence(
-				ComparisonString,
-				ComparisonString
+				ComparisonStringA,
+				ComparisonStringB
+			);
+		}
+		[Benchmark]
+		public void DmitryBestParallelBatch()
+		{
+			new DmitryBestParallelBatch(N).EditSequence(
+				ComparisonStringA,
+				ComparisonStringB
 			);
 		}
 	}

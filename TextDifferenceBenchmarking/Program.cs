@@ -19,15 +19,17 @@ namespace TextDifferenceBenchmarking
 		private static void ValidateEngines()
 		{
 			var standard = new DmitryBychenko();
-			var engineTypes = Assembly.GetExecutingAssembly().GetTypes()
-				.Where(t => t.IsClass && typeof(ITextDiff).IsAssignableFrom(t) && t != typeof(DmitryBychenko))
-				.ToArray();
+			CompareEngine(standard, new DmitryBestParallelBatch(10));
 
-			foreach (var engineType in engineTypes)
-			{
-				var engine = Activator.CreateInstance(engineType) as ITextDiff;
-				CompareEngine(standard, engine);
-			}
+			//var engineTypes = Assembly.GetExecutingAssembly().GetTypes()
+			//	.Where(t => t.IsClass && typeof(ITextDiff).IsAssignableFrom(t) && t != typeof(DmitryBychenko))
+			//	.ToArray();
+
+			//foreach (var engineType in engineTypes)
+			//{
+			//	var engine = Activator.CreateInstance(engineType) as ITextDiff;
+			//	CompareEngine(standard, engine);
+			//}
 		}
 
 		private static void CompareEngine(ITextDiff standard, ITextDiff tested)
