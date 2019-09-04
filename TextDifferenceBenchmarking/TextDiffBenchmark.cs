@@ -13,8 +13,8 @@ namespace TextDifferenceBenchmarking
 	[Config(typeof(Config))]
 	public class TextDiffBenchmark
 	{
-		[Params(1024)]
-		public int N;
+		[Params(16,256,1024,4096)]
+		public int NumberOfChars;
 
 		private string ComparisonStringA;
 
@@ -24,7 +24,6 @@ namespace TextDifferenceBenchmarking
 		{
 			public Config()
 			{
-				//Add(Job.DryCore.WithInvocationCount(200).WithIterationCount(10));
 				Add(Job.Core);
 				Add(MemoryDiagnoser.Default);
 				Add(TargetMethodColumn.Method, StatisticColumn.Max);
@@ -34,47 +33,46 @@ namespace TextDifferenceBenchmarking
 		[GlobalSetup]
 		public void Setup()
 		{
-			var baseStringA = "abcdefghij";
-			var baseStringB = "jihgfedcba";
-			var builderA = new StringBuilder(baseStringA.Length * N);
-			var builderB = new StringBuilder(baseStringA.Length * N);
-			for (int i = 0, l = N; i < l; i++)
+			var baseStringA = "aabbccddee";
+			var baseStringB = "abcdeabcde";
+			var builderA = new StringBuilder(NumberOfChars);
+			var builderB = new StringBuilder(NumberOfChars);
+
+			var charBlocks = (int)Math.Floor((double)NumberOfChars / 10);
+			for (int i = 0, l = charBlocks; i < l; i++)
 			{
 				builderA.Append(baseStringA);
 				builderB.Append(baseStringB);
 			}
+
+			var remainder = (int)((double)NumberOfChars / 10 % 1 * 10);
+			builderA.Append(baseStringA.Substring(0, remainder));
+			builderB.Append(baseStringB.Substring(0, remainder));
+
 			ComparisonStringA = builderA.ToString();
 			ComparisonStringB = builderB.ToString();
 		}
 
-		//[Benchmark(Baseline = true)]
-		//public void DmitryBychenko()
-		//{
-		//	new DmitryBychenko().EditSequence(
-		//		ComparisonString,
-		//		ComparisonString
-		//	);
-		//}
-		//[Benchmark]
-		//public void DmitryBest()
-		//{
-		//	new DmitryBest().EditSequence(
-		//		ComparisonString,
-		//		ComparisonString
-		//	);
-		//}
-		[Benchmark]
-		public void DmitryBestParallel()
+		[Benchmark(Baseline = true)]
+		public void DmitryBychenko()
 		{
-			new DmitryBestParallel().EditSequence(
+			new DmitryBychenko().EditSequence(
 				ComparisonStringA,
 				ComparisonStringB
 			);
 		}
 		[Benchmark]
-		public void DmitryBestParallelBatch()
+		public void DmitryBest()
 		{
-			new DmitryBestParallelBatch(N).EditSequence(
+			new DmitryBest().EditSequence(
+				ComparisonStringA,
+				ComparisonStringB
+			);
+		}
+		[Benchmark]
+		public void DmitryBestParallel()
+		{
+			new DmitryBestParallel().EditSequence(
 				ComparisonStringA,
 				ComparisonStringB
 			);
