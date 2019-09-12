@@ -13,6 +13,12 @@ namespace TextDifferenceBenchmarking.DiffEngines
 	/// </summary>
 	public class DmitryBest : ITextDiff
 	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private int Mod(int baseValue, int divValue)
+		{
+			return baseValue & (divValue - 1);
+		}
+
 		public unsafe EditOperation[] EditSequence(
 			string source, string target,
 			int insertCost = 1, int removeCost = 1, int editCost = 1)
@@ -36,17 +42,18 @@ namespace TextDifferenceBenchmarking.DiffEngines
 			var M = new Span<EditOperationKind>(operationHandle.ToPointer(), totalSize);
 
 			// Minimum cost so far
-			var costHandle = Marshal.AllocHGlobal(Unsafe.SizeOf<int>() * totalSize);
-			var D = new Span<int>(costHandle.ToPointer(), totalSize);
+			var costDataCount = 3 * columns;
+			var costHandle = Marshal.AllocHGlobal(Unsafe.SizeOf<int>() * costDataCount);
+			var D = new Span<int>(costHandle.ToPointer(), costDataCount);
 
 			M[0] = EditOperationKind.None;
 			D[0] = 0;
 
 			// Edge: all removes
+			D[1 * columns] = removeCost;
 			for (var i = 1; i <= sourceLength; ++i)
 			{
 				M[i * columns] = EditOperationKind.Remove;
-				D[i * columns] = removeCost * i;
 			}
 
 			// Edge: all inserts 
@@ -60,8 +67,8 @@ namespace TextDifferenceBenchmarking.DiffEngines
 			for (var i = 1; i <= sourceLength; ++i)
 			{
 				var mCurrentRow = M.Slice(i * columns);
-				var dCurrentRow = D.Slice(i * columns);
-				var dPrevRow = D.Slice((i - 1) * columns);
+				var dCurrentRow = D.Slice(Mod(i, 2) * columns);
+				var dPrevRow = D.Slice(Mod(i - 1, 2) * columns);
 				var sourcePrevChar = source[i - 1];
 				for (var j = 1; j <= targetLength; ++j)
 				{
