@@ -42,7 +42,7 @@ namespace TextDifferenceBenchmarking.DiffEngines
 			var M = new Span<EditOperationKind>(operationHandle.ToPointer(), totalSize);
 
 			// Minimum cost so far
-			var costDataCount = 3 * columns;
+			var costDataCount = 2 * columns;
 			var costHandle = Marshal.AllocHGlobal(Unsafe.SizeOf<int>() * costDataCount);
 			var D = new Span<int>(costHandle.ToPointer(), costDataCount);
 
@@ -50,7 +50,6 @@ namespace TextDifferenceBenchmarking.DiffEngines
 			D[0] = 0;
 
 			// Edge: all removes
-			D[1 * columns] = removeCost;
 			for (var i = 1; i <= sourceLength; ++i)
 			{
 				M[i * columns] = EditOperationKind.Remove;
@@ -68,6 +67,8 @@ namespace TextDifferenceBenchmarking.DiffEngines
 			{
 				var mCurrentRow = M.Slice(i * columns);
 				var dCurrentRow = D.Slice(Mod(i, 2) * columns);
+				dCurrentRow[0] = i * removeCost;
+
 				var dPrevRow = D.Slice(Mod(i - 1, 2) * columns);
 				var sourcePrevChar = source[i - 1];
 				for (var j = 1; j <= targetLength; ++j)
@@ -83,7 +84,7 @@ namespace TextDifferenceBenchmarking.DiffEngines
 						mCurrentRow[j] = EditOperationKind.Add;
 					else if (min == delete)
 						mCurrentRow[j] = EditOperationKind.Remove;
-					else if (min == edit)
+					else
 						mCurrentRow[j] = EditOperationKind.Edit;
 
 					dCurrentRow[j] = min;
