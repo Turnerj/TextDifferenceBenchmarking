@@ -21,6 +21,7 @@ namespace TextDifferenceBenchmarking.DiffEngines
 			public int Row;
 			public bool ReadFirstChar;
 			public EventWaitHandle WaitHandle;
+			public bool Waiting;
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -94,9 +95,9 @@ namespace TextDifferenceBenchmarking.DiffEngines
 				};
 			}
 
-			Debug.WriteLine($"Parallel Process Starting: {degreeOfParallelism} threads, {columnsPerParallel} columns each");
+			//Debug.WriteLine($"Parallel Process Starting: {degreeOfParallelism} threads, {columnsPerParallel} columns each");
 
-			Parallel.For(0, degreeOfParallelism, parallelIndex => {
+			Parallel.For(0, degreeOfParallelism, new ParallelOptions { MaxDegreeOfParallelism = degreeOfParallelism }, parallelIndex => {
 				var localM = new Span<EditOperationKind>(operationHandle.ToPointer(), totalSize);
 				var localD = new Span<int>(costHandle.ToPointer(), costDataCount);
 
@@ -105,11 +106,13 @@ namespace TextDifferenceBenchmarking.DiffEngines
 
 				if (parallelIndex > 0)
 				{
-					currentTaskData.WaitHandle.WaitOne();
-					Debug.WriteLine($"{parallelIndex} starts");
+					//currentTaskData.Waiting = true;
+					//currentTaskData.WaitHandle.WaitOne();
+					//currentTaskData.Waiting = false;
+					//Debug.WriteLine($"{parallelIndex} starts");
 				}
 
-				var debugStr2 = "";
+				//var debugStr2 = "";
 				for (var i = 1; i <= sourceLength; ++i)
 				{
 					var mCurrentRow = localM.Slice(i * columns);
@@ -122,66 +125,88 @@ namespace TextDifferenceBenchmarking.DiffEngines
 
 					if (degreeOfParallelism > 0)
 					{
-						var hadToWait = false;
-						while (true)
-						{
-							var waitingOnPrevious = false;
-							if (parallelIndex > 0)
-							{
-								var prevTaskData = parallelData[parallelIndex - 1];
-								waitingOnPrevious = prevTaskData.Row <= currentTaskData.Row;
-								if (waitingOnPrevious)
-								{
-									Debug.WriteLine($"{parallelIndex} waiting on {parallelIndex - 1}");
-									currentTaskData.WaitHandle.WaitOne();
-								}
-							}
+						while (
+								(parallelIndex > 0 && parallelData[parallelIndex - 1].Row <= currentTaskData.Row) ||
+								(
+									parallelIndex + 1 < degreeOfParallelism &&
+									(
+										(
+											parallelData[parallelIndex + 1].Row == currentTaskData.Row - 1 &&
+											!parallelData[parallelIndex + 1].ReadFirstChar
+										) ||
+										parallelData[parallelIndex + 1].Row < currentTaskData.Row - 1
+									)
+								)
+							) ;
+						//{
+						//	currentTaskData.Waiting = true;
+						//	currentTaskData.WaitHandle.WaitOne(1);
+						//	currentTaskData.Waiting = false;
+						//}
 
-							var waitingOnNext = false;
-							if (parallelIndex + 1 < degreeOfParallelism)
-							{
-								var nextTaskData = parallelData[parallelIndex + 1];
+						//var hadToWait = false;
+						//while (true)
+						//{
+						//	var waitingOnPrevious = false;
+						//	if (parallelIndex > 0)
+						//	{
+						//		var prevTaskData = parallelData[parallelIndex - 1];
+						//		waitingOnPrevious = prevTaskData.Row <= currentTaskData.Row;
+						//		if (waitingOnPrevious)
+						//		{
+						//			//Debug.WriteLine($"{parallelIndex} waiting on {parallelIndex - 1}");
+						//			currentTaskData.Waiting = true;
+						//			currentTaskData.WaitHandle.WaitOne();
+						//			currentTaskData.Waiting = false;
+						//		}
+						//	}
 
-								waitingOnNext = (nextTaskData.Row == currentTaskData.Row - 1 && !nextTaskData.ReadFirstChar) ||
-									nextTaskData.Row < currentTaskData.Row - 1;
-								if (waitingOnNext)
-								{
-									Debug.WriteLine($"{parallelIndex} waiting on {parallelIndex + 1}");
-									currentTaskData.WaitHandle.WaitOne();
-								}
-							}
+						//	var waitingOnNext = false;
+						//	if (parallelIndex + 1 < degreeOfParallelism)
+						//	{
+						//		var nextTaskData = parallelData[parallelIndex + 1];
 
-							if (!waitingOnPrevious && !waitingOnNext)
-							{
-								break;
-							}
-							else
-							{
-								hadToWait = true;
-							}
-						}
+						//		waitingOnNext = (nextTaskData.Row == currentTaskData.Row - 1 && !nextTaskData.ReadFirstChar) ||
+						//			nextTaskData.Row < currentTaskData.Row - 1;
+						//		if (waitingOnNext)
+						//		{
+						//			currentTaskData.Waiting = true;
+						//			currentTaskData.WaitHandle.WaitOne();
+						//			currentTaskData.Waiting = false;
+						//		}
+						//	}
 
-						if (hadToWait)
-						{
-							Debug.WriteLine($"{parallelIndex} starts");
-						}
-						else if (i > 1)
-						{
-							Debug.WriteLine($"{parallelIndex} didn't have to wait");
-						}
+						//	if (!waitingOnPrevious && !waitingOnNext)
+						//	{
+						//		break;
+						//	}
+						//	else
+						//	{
+						//		hadToWait = true;
+						//	}
+						//}
+
+						//if (hadToWait)
+						//{
+						//	Debug.WriteLine($"{parallelIndex} starts");
+						//}
+						//else if (i > 1)
+						//{
+						//	Debug.WriteLine($"{parallelIndex} didn't have to wait");
+						//}
 					}
 
 					var dPrevRow = localD.Slice(Mod(i - 1, 2) * columns);
 					var sourcePrevChar = source[i - 1];
 					var columnTravel = 0;
-					var debugStr = "";
-					debugStr2 = "";
+					//var debugStr = "";
+					//debugStr2 = "";
 
-					if (parallelIndex == 0)
-					{
-						debugStr += $"{dPrevRow[0]:00},";
-						debugStr2 += $"{dCurrentRow[0]:00},";
-					}
+					//if (parallelIndex == 0)
+					//{
+					//	debugStr += $"{dPrevRow[0]:00},";
+					//	debugStr2 += $"{dCurrentRow[0]:00},";
+					//}
 
 					for (var j = columnStartIndex; j <= targetLength && columnTravel < columnsPerParallel; ++j, columnTravel++)
 					{
@@ -201,38 +226,38 @@ namespace TextDifferenceBenchmarking.DiffEngines
 
 						dCurrentRow[j] = min;
 
-						debugStr += $"{dPrevRow[j]:00},";
-						debugStr2 += $"{dCurrentRow[j]:00},";
+						//debugStr += $"{dPrevRow[j]:00},";
+						//debugStr2 += $"{dCurrentRow[j]:00},";
 
 						if (!currentTaskData.ReadFirstChar)
 						{
 							currentTaskData.ReadFirstChar = true;
-							if (parallelIndex > 0)
-							{
-								var prevTaskData = parallelData[parallelIndex - 1];
-								Debug.WriteLine($"{parallelIndex} (row {currentTaskData.Row}) read first character (tells {parallelIndex - 1} (row {prevTaskData.Row}) to start)");
-								prevTaskData.WaitHandle.Set();
-							}
+							//if (parallelIndex > 0)
+							//{
+							//	var prevTaskData = parallelData[parallelIndex - 1];
+							//	//Debug.WriteLine($"{parallelIndex} (row {currentTaskData.Row}) read first character (tells {parallelIndex - 1} (row {prevTaskData.Row}) to start)");
+							//	prevTaskData.WaitHandle.Set();
+							//}
 						}
 					}
 
-					Debug.WriteLine($"{i - 1:00}-{parallelIndex:00}: {debugStr}");
+					//Debug.WriteLine($"{i - 1:00}-{parallelIndex:00}: {debugStr}");
 
 					currentTaskData.ReadFirstChar = false;
 					currentTaskData.Row++;
 
-					if (degreeOfParallelism > 1)
-					{
-						if (parallelIndex + 1 < degreeOfParallelism)
-						{
-							var nextTaskData = parallelData[parallelIndex + 1];
-							Debug.WriteLine($"{parallelIndex} (formerly row {currentTaskData.Row - 1}) finishes row (tells {parallelIndex + 1} (row {nextTaskData.Row}) to start)");
-							nextTaskData.WaitHandle.Set();
-						}
-					}
+					//if (degreeOfParallelism > 1)
+					//{
+					//	if (parallelIndex + 1 < degreeOfParallelism)
+					//	{
+					//		var nextTaskData = parallelData[parallelIndex + 1];
+					//		//Debug.WriteLine($"{parallelIndex} (formerly row {currentTaskData.Row - 1}) finishes row (tells {parallelIndex + 1} (row {nextTaskData.Row}) to start)");
+					//		nextTaskData.WaitHandle.Set();
+					//	}
+					//}
 				}
 
-				Debug.WriteLine($"{sourceLength:00}-{parallelIndex:00}: {debugStr2}");
+				//Debug.WriteLine($"{sourceLength:00}-{parallelIndex:00}: {debugStr2}");
 			});
 
 			for (int i = 0, l = parallelData.Length; i < l; i++)
@@ -240,7 +265,7 @@ namespace TextDifferenceBenchmarking.DiffEngines
 				parallelData[i].WaitHandle.Close();
 			}
 
-			Debug.WriteLine("All Complete");
+			//Debug.WriteLine("All Complete");
 
 			Marshal.FreeHGlobal(costHandle);
 
