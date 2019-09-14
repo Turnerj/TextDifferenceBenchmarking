@@ -12,12 +12,17 @@ namespace TextDifferenceBenchmarking.DiffEngines
 	/// </summary>
 	public class DmitryOperationDiscardFast : ITextDiff
 	{
-		private int OperationRows { get; }
+		private int NumberOfOperationRows { get; }
 
 		public DmitryOperationDiscardFast() : this(128) { }
-		public DmitryOperationDiscardFast(int operationRows)
+		public DmitryOperationDiscardFast(int numberOfOperationRows)
 		{
-			OperationRows = operationRows;
+			if ((numberOfOperationRows & 1) != 0)
+			{
+				throw new ArgumentException("Value must be a power of 2", nameof(numberOfOperationRows));
+			}
+
+			NumberOfOperationRows = numberOfOperationRows;
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -47,7 +52,7 @@ namespace TextDifferenceBenchmarking.DiffEngines
 			var operations = new Span<EditOperation>(operationResultsHandle.ToPointer(), maxSize);
 			var operationIndex = maxSize;
 
-			var operationDataCount = (OperationRows + 1) * columns;
+			var operationDataCount = (NumberOfOperationRows + 1) * columns;
 			var operationHandle = Marshal.AllocHGlobal(Unsafe.SizeOf<EditOperationKind>() * operationDataCount);
 			var M = new Span<EditOperationKind>(operationHandle.ToPointer(), operationDataCount);
 
@@ -64,7 +69,7 @@ namespace TextDifferenceBenchmarking.DiffEngines
 			{
 				// Edge: all removes
 				D[1 * columns] = removeCost;
-				for (var i = 1; i <= OperationRows; ++i)
+				for (var i = 1; i <= NumberOfOperationRows; ++i)
 				{
 					M[i * columns] = EditOperationKind.Remove;
 				}
@@ -78,7 +83,7 @@ namespace TextDifferenceBenchmarking.DiffEngines
 
 				for (var i = 1; i <= y; ++i)
 				{
-					var mCurrentRow = M.Slice(Mod(i, OperationRows) * columns);
+					var mCurrentRow = M.Slice(Mod(i, NumberOfOperationRows) * columns);
 					var dCurrentRow = D.Slice(Mod(i, 2) * columns);
 					var dPrevRow = D.Slice(Mod(i - 1, 2) * columns);
 					var sourcePrevChar = source[i - 1];
@@ -103,10 +108,10 @@ namespace TextDifferenceBenchmarking.DiffEngines
 				}
 
 				var outerBreak = false;
-				for (var opRowIndex = 0; opRowIndex < OperationRows && (x > 0 || y > 0); opRowIndex++)
+				for (var opRowIndex = 0; opRowIndex < NumberOfOperationRows && (x > 0 || y > 0); opRowIndex++)
 				{
 					operationIndex--;
-					var op = M[Mod(y, OperationRows) * columns + x];
+					var op = M[Mod(y, NumberOfOperationRows) * columns + x];
 
 					if (op == EditOperationKind.Add)
 					{

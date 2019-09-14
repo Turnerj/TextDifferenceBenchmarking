@@ -3,7 +3,6 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using TextDifferenceBenchmarking.Utilities;
 
 namespace TextDifferenceBenchmarking.DiffEngines
 {
@@ -71,7 +70,7 @@ namespace TextDifferenceBenchmarking.DiffEngines
 				}
 
 			costPool.Return(D);
-			
+
 			// Backward: knowing scores (D) and actions (M) let's building edit sequence
 			List<EditOperation> result =
 			  new List<EditOperation>(source.Length + target.Length);

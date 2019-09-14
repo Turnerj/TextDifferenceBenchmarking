@@ -20,6 +20,7 @@ namespace TextDifferenceBenchmarking
 				.ToArray();
 
 			EnginesToValidate = engineTypes.Select(t => Activator.CreateInstance(t) as ITextDiff).ToArray();
+			EnginesToValidate = new ITextDiff[] { new DmitryBest() };
 		}
 
 		public void Validate()
@@ -69,6 +70,10 @@ namespace TextDifferenceBenchmarking
 			var testA1 = "Hello World!";
 			var testA2 = "HeLLo Wolrd!";
 			results.Add(textDiff.EditSequence(testA1, testA2));
+
+			var testE1 = "Nulla enim.";
+			var testE2 = "Nulla - Hello - enim.";
+			results.Add(textDiff.EditSequence(testE1, testE2));
 
 			var testB1 = "Nulla nec ipsum sit amet enim malesuada dapibus vel quis mi.";
 			var testB2 = "Nulla nec ipsum sit amet - Hello - enim malesuada dapibus vel quis mi.";
