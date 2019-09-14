@@ -13,7 +13,7 @@ namespace TextDifferenceBenchmarking.Benchmarks
 	[CoreJob, MemoryDiagnoser, MaxColumn]
 	public class MatrixBenchmark : TextBenchmarkBase
 	{
-		[Params(16, 256, 1024, 4096, 8192)]
+		[Params(16, 256, 1024, 2048, 4096)]
 		public int NumberOfCharacters;
 		
 		[GlobalSetup]
