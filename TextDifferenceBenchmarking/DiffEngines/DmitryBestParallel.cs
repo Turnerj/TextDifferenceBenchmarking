@@ -16,6 +16,15 @@ namespace TextDifferenceBenchmarking.DiffEngines
 	/// </summary>
 	public class DmitryBestParallel : ITextDiff
 	{
+		private int MinimumColumnsPerThread { get; }
+
+		public DmitryBestParallel() : this(16) { }
+
+		public DmitryBestParallel(int minimumColumnsPerThread)
+		{
+			MinimumColumnsPerThread = minimumColumnsPerThread;
+		}
+
 		private class TaskData
 		{
 			public int Row;
@@ -72,7 +81,7 @@ namespace TextDifferenceBenchmarking.DiffEngines
 			// Having fit N - 1, K - 1 characters let's fit N, K
 			var maxDegreeOfParallelism = Environment.ProcessorCount;
 			var columnsPerParallel = (int)Math.Ceiling((double)columns / maxDegreeOfParallelism);
-			columnsPerParallel = Math.Max(columnsPerParallel, 16);
+			columnsPerParallel = Math.Max(columnsPerParallel, MinimumColumnsPerThread);
 			var columnsLeft = columns;
 			var degreeOfParallelism = 0;
 			for (; columnsLeft >= columnsPerParallel && degreeOfParallelism < maxDegreeOfParallelism; columnsLeft -= columnsPerParallel, degreeOfParallelism++) ;
