@@ -11,9 +11,9 @@ using TextDifferenceBenchmarking.DiffEngines;
 namespace TextDifferenceBenchmarking.Benchmarks
 {
 	[CoreJob, MemoryDiagnoser, MaxColumn]
-	public class TextDiffBenchmark : TextBenchmarkBase
+	public class BestVariantsBenchmark : TextBenchmarkBase
 	{
-		[Params(16, 256, 1024, 4096)]
+		[Params(16, 256, 1024, 4096, 8192, 16384)]
 		public int NumberOfCharacters;
 
 		[GlobalSetup]
@@ -23,7 +23,7 @@ namespace TextDifferenceBenchmarking.Benchmarks
 		}
 
 		[Benchmark(Baseline = true)]
-		public void DmitryBychenko()
+		public void Baseline()
 		{
 			new DmitryBychenko().EditSequence(
 				ComparisonStringA,
@@ -31,20 +31,20 @@ namespace TextDifferenceBenchmarking.Benchmarks
 			);
 		}
 		[Benchmark]
-		public void DmitryBest()
+		public void Best()
 		{
 			new DmitryBest().EditSequence(
 				ComparisonStringA,
 				ComparisonStringB
 			);
 		}
-		//[Benchmark]
-		//public void DmitryBestParallel()
-		//{
-		//	new DmitryBestParallel().EditSequence(
-		//		ComparisonStringA,
-		//		ComparisonStringB
-		//	);
-		//}
+		[Benchmark]
+		public void BestParallel()
+		{
+			new DmitryBestParallel().EditSequence(
+				ComparisonStringA,
+				ComparisonStringB
+			);
+		}
 	}
 }
